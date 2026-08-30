@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>__TITLE__</title>
+  <style>
+    __STYLES__
+  </style>
+</head>
+<body class="theme-cyber-neon">
+  <div id="app">
+    <header class="hud-header">
+      <div class="hud-branding">
+        <span class="logo-icon">🐧</span>
+        <span class="logo-text">DomLinux</span>
+        <span class="logo-badge">RISC-V OS</span>
+      </div>
+      <div class="hud-stats">
+        <div class="stat-item">
+          <span class="stat-label">CPU</span>
+          <span class="stat-value" id="stat-mips">0.00 MIPS</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">RAM</span>
+          <span class="stat-value" id="stat-ram">0 / 64 MB</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">UPTIME</span>
+          <span class="stat-value" id="stat-uptime">00:00:00</span>
+        </div>
+      </div>
+      <div class="hud-controls">
+        <select id="theme-selector" class="hud-btn select-btn">
+          <option value="theme-cyber-neon">Cyber Neon</option>
+          <option value="theme-matrix-green">Matrix Green</option>
+          <option value="theme-amber-crt">Amber CRT</option>
+          <option value="theme-clean-dark">Clean Dark</option>
+        </select>
+        <button id="btn-upload" class="hud-btn" title="Upload file to /tmp">📁 Upload</button>
+        <button id="btn-save" class="hud-btn" title="Persist state to IndexedDB">💾 Save</button>
+        <button id="btn-reset" class="hud-btn danger-btn" title="Reboot Linux VM">🔄 Reset</button>
+      </div>
+    </header>
+
+    <main class="terminal-container" id="terminal-container">
+      <div class="crt-overlay"></div>
+      <div id="terminal-screen" class="terminal-screen" tabindex="0"></div>
+    </main>
+
+    <footer class="hud-footer">
+      <div class="status-indicator">
+        <span class="status-dot active"></span>
+        <span id="status-text">VM Running</span>
+      </div>
+      <div class="shortcuts-hint">
+        <span>Drop file to inject into <code>/tmp</code></span> • <span>Run <code>top</code>, <code>ls</code>, or <code>uname -a</code></span>
+      </div>
+    </footer>
+  </div>
+
+  <input type="file" id="file-uploader" style="display: none;" multiple />
+
+  <script>
+    // Embedded Base64 Payloads
+    const PAYLOAD_WASM_B64 = "__WASM_B64__";
+    const PAYLOAD_KERNEL_B64 = "__KERNEL_B64__";
+    const PAYLOAD_ROOTFS_B64 = "__ROOTFS_B64__";
+    const PAYLOAD_DTB_B64 = "__DTB_B64__";
+    const PAYLOAD_COMPRESSED = __COMPRESSED__;
+  </script>
+
+  <script>
+    __SCRIPTS__
+  </script>
+</body>
+</html>

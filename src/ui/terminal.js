@@ -1,5 +1,6 @@
 /**
- * Lightweight ANSI/VT100 Terminal Engine for HTMLix
+ * Lightweight ANSI/VT100 Terminal Engine for DomLinux
+ * Highly optimized with 60fps dirty-frame batch rendering
  */
 
 const ANSI_COLORS = {
@@ -42,7 +43,6 @@ class AnsiParser {
 
     while (i < text.length) {
       if (text.charCodeAt(i) === 0x1b && text[i + 1] === '[') {
-        // ANSI Escape sequence start
         pushToken();
         i += 2;
         let seq = '';
@@ -54,7 +54,6 @@ class AnsiParser {
         i++;
 
         if (cmd === 'm') {
-          // SGR (Select Graphic Rendition)
           const codes = seq ? seq.split(';').map(n => parseInt(n, 10)) : [0];
           for (const code of codes) {
             if (code === 0) {
@@ -100,6 +99,8 @@ class WebTerminal {
     this.container = options.container || null;
     this.onDataCallback = null;
     this.maxScrollback = 1000;
+    this.isDirty = false;
+    this.renderPending = false;
   }
 
   onData(cb) {
@@ -112,29 +113,28 @@ class WebTerminal {
       const code = chunk.charCodeAt(i);
 
       if (code === 0x1b && chunk[i + 1] === '[') {
-        // Handle escape sequence
         let j = i + 2;
         while (j < chunk.length && !/[a-zA-Z]/.test(chunk[j])) j++;
         const seq = chunk.substring(i + 2, j);
         const cmd = chunk[j];
         i = j;
 
-        if (cmd === 'H' || cmd === 'f') { // Move cursor
+        if (cmd === 'H' || cmd === 'f') {
           const parts = seq.split(';').map(n => parseInt(n, 10) || 1);
           this.cursorY = Math.max(0, parts[0] - 1);
           this.cursorX = Math.max(0, (parts[1] || 1) - 1);
           this.ensureLine(this.cursorY);
-        } else if (cmd === 'J') { // Clear screen
+        } else if (cmd === 'J') {
           if (seq === '2' || seq === '') {
             this.lines = [''];
             this.cursorX = 0;
             this.cursorY = 0;
           }
-        } else if (cmd === 'K') { // Clear line
+        } else if (cmd === 'K') {
           if (this.lines[this.cursorY]) {
             this.lines[this.cursorY] = this.lines[this.cursorY].substring(0, this.cursorX);
           }
-        } else if (cmd === 'm') { // Color change
+        } else if (cmd === 'm') {
           this.parser.parse(`\x1b[${seq}m`);
         }
         continue;
@@ -170,8 +170,20 @@ class WebTerminal {
       this.cursorY = Math.max(0, this.cursorY - drop);
     }
 
-    if (this.container) {
-      this.render();
+    this.isDirty = true;
+    this.requestRender();
+  }
+
+  requestRender() {
+    if (!this.renderPending && this.container) {
+      this.renderPending = true;
+      requestAnimationFrame(() => {
+        this.renderPending = false;
+        if (this.isDirty) {
+          this.render();
+          this.isDirty = false;
+        }
+      });
     }
   }
 
@@ -189,10 +201,10 @@ class WebTerminal {
     if (!this.container) return;
     
     let html = '';
-    for (let i = 0; i < this.lines.length; i++) {
+    const len = this.lines.length;
+    for (let i = 0; i < len; i++) {
       let lineText = this.lines[i] || '';
       if (i === this.cursorY) {
-        // Insert cursor
         const before = this.escapeHtml(lineText.substring(0, this.cursorX));
         const curChar = lineText[this.cursorX] || ' ';
         const after = this.escapeHtml(lineText.substring(this.cursorX + 1));
@@ -217,7 +229,6 @@ class WebTerminal {
   attachDOM(container) {
     this.container = container;
     
-    // Listen for keyboard input
     window.addEventListener('keydown', (e) => {
       if (!this.onDataCallback) return;
 

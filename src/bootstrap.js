@@ -45,7 +45,7 @@
     const emulator = new RV32Emulator({ ramSize: 64 * 1024 * 1024 });
     emulator.init();
 
-    // 3. Pipe UART to Terminal and vice versa
+    // 3. Pipe UART to Terminal (batched via terminal write)
     emulator.onChar((charCode) => {
       terminal.write(String.fromCharCode(charCode));
     });
@@ -75,17 +75,18 @@
 
     if (statusText) statusText.innerText = 'System Running (RV32)';
 
-    // 6. Turbo Execution Loop (Adaptive batching for 10M+ IPS)
+    // 6. High-Performance Execution Loop
     let running = true;
-    const CYCLES_PER_SLICE = 150000;
+    const CHUNK_SIZE = 250000;
 
     function runSlice() {
       if (!running) return;
       
-      const startTime = performance.now();
+      const start = performance.now();
       try {
-        while (performance.now() - startTime < 12) {
-          emulator.step(CYCLES_PER_SLICE);
+        // Run full burst of cycles within a 12ms frame budget for 60fps responsiveness
+        while (performance.now() - start < 14) {
+          emulator.step(CHUNK_SIZE);
         }
       } catch (err) {
         console.error('CPU Execution error:', err);
